@@ -110,9 +110,7 @@ router.get("/movies", authJwtController.isAuthenticated, async (req, res) => {
 router.post("/movie", authJwtController.isAuthenticated, (req, res) => {
   const { title, year, genre, actors } = req.body;
   if (!actors || actors.length < 3) {
-    return res
-      .status(500)
-      .json({ success: false, msg: "Must have at least 3 actors" });
+    return res.status(500).json({ success: false, msg: actors });
   }
   Movies.create(
     {
@@ -125,7 +123,9 @@ router.post("/movie", authJwtController.isAuthenticated, (req, res) => {
       if (error) {
         return res.status(500).json(error);
       }
-      return res.status(200).json(movie);
+      return res
+        .status(200)
+        .json({ success: true, msg: "Movie created", movie });
     }
   );
 });
@@ -136,7 +136,7 @@ router.get(
   async (req, res) => {
     try {
       const movie = await Movies.findById(req.params.movieID);
-      return es.status(200).json(movie);
+      return res.status(200).json({ success: true, msg: "Movie found", movie });
     } catch (error) {
       return res.status(500).json(error);
     }
@@ -150,17 +150,21 @@ router.put("/movie/:movieID", authJwtController.isAuthenticated, (req, res) => {
       .json({ success: false, msg: "Must have at least 3 actors" });
   }
 
-  Movies.findByIdAndUpdate(req.params.movieID, {
-    $set: { title: title, year: year, genre: genre, actors: actors },
-  }).exec((error, movie) => {
+  Movies.findByIdAndUpdate(
+    req.params.movieID,
+    {
+      $set: { title: title, year: year, genre: genre, actors: actors },
+    },
+    { new: true }
+  ).exec((error, movie) => {
     if (error) {
       return res.status(500).json(error);
     }
-    return res.status(200).json(movie);
+    return res.status(200).json({ success: true, msg: "Movie updated", movie });
   });
 });
 router.delete(
-  "/movie:movieID",
+  "/movie/:movieID",
   authJwtController.isAuthenticated,
   async (req, res) => {
     try {
