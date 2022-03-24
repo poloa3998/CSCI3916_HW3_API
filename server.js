@@ -284,7 +284,7 @@ const trackEvent = (category, action, label, value, dimension, metric) => {
     // API Version.
     v: "1",
     // Tracking ID / Property ID.
-    tid: GA_TRACKING_ID,
+    tid: process.env.GA_TRACKING_ID,
     // Random Client Identifier. Ideally, this should be a UUID that
     // is associated with particular user, device, or browser instance.
     cid: crypto.randomBytes(16).toString("hex"),
