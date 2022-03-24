@@ -15,7 +15,7 @@ var User = require("./Users");
 const Movies = require("./moviesModel");
 const Reviews = require("./reviewsModel");
 const rp = require("request-promise");
-
+const crypto = require("crypto");
 var app = express();
 app.use(cors());
 app.use(bodyParser.json());
