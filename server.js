@@ -14,6 +14,7 @@ var cors = require("cors");
 var User = require("./Users");
 const Movies = require("./moviesModel");
 const Reviews = require("./reviewsModel");
+const rp = require("request-promise");
 
 var app = express();
 app.use(cors());
@@ -280,33 +281,36 @@ router.post("/reviews", authJwtController.isAuthenticated, async (req, res) => {
 });
 
 const trackEvent = (category, action, label, value, dimension, metric) => {
-  const data = {
-    // API Version.
-    v: "1",
-    // Tracking ID / Property ID.
-    tid: process.env.GA_TRACKING_ID,
-    // Random Client Identifier. Ideally, this should be a UUID that
-    // is associated with particular user, device, or browser instance.
-    cid: crypto.randomBytes(16).toString("hex"),
-    // Event hit type.
-    t: "event",
-    // Event category.
-    ec: category,
-    // Event action.
-    ea: action,
-    // Event label.
-    el: label,
-    // Event value.
-    ev: value,
-    // Custom Dimension
-    cd1: dimension,
-    // Custom Metric
-    cm1: metric,
-  },
-  
-  return fetch("http://www.google-analytics.com/debug/collect", {
-    params: data,
-  });
+  const options = {
+    method: "GET",
+    url: "https://www.google-analytics.com/collect",
+    qs: {
+      // API Version.
+      v: "1",
+      // Tracking ID / Property ID.
+      tid: GA_TRACKING_ID,
+      // Random Client Identifier. Ideally, this should be a UUID that
+      // is associated with particular user, device, or browser instance.
+      cid: crypto.randomBytes(16).toString("hex"),
+      // Event hit type.
+      t: "event",
+      // Event category.
+      ec: category,
+      // Event action.
+      ea: action,
+      // Event label.
+      el: label,
+      // Event value.
+      ev: value,
+      // Custom Dimension
+      cd1: dimension,
+      // Custom Metric
+      cm1: metric,
+    },
+    headers: { "Cache-Control": "no-cache" },
+  };
+
+  return rp(options);
 };
 
 app.get("/test", async (req, res, next) => {
