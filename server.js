@@ -278,6 +278,57 @@ router.post("/reviews", authJwtController.isAuthenticated, async (req, res) => {
     res.status(500).json(error);
   }
 });
+
+const trackEvent = (category, action, label, value, dimension, metric) => {
+  const data = {
+    // API Version.
+    v: "1",
+    // Tracking ID / Property ID.
+    tid: GA_TRACKING_ID,
+    // Random Client Identifier. Ideally, this should be a UUID that
+    // is associated with particular user, device, or browser instance.
+    cid: crypto.randomBytes(16).toString("hex"),
+    // Event hit type.
+    t: "event",
+    // Event category.
+    ec: category,
+    // Event action.
+    ea: action,
+    // Event label.
+    el: label,
+    // Event value.
+    ev: value,
+    // Custom Dimension
+    cd1: dimension,
+    // Custom Metric
+    cm1: metric,
+  },
+  
+  return fetch("http://www.google-analytics.com/debug/collect", {
+    params: data,
+  });
+};
+
+app.get("/test", async (req, res, next) => {
+  // Event value must be numeric.
+  try {
+    await trackEvent(
+      "Feedback",
+      "Rating",
+      "Feedback for Movie",
+      "3",
+      "Quality-focused static definition",
+      "1"
+    );
+    res.status(200).send("Event tracked.").end();
+  } catch (error) {
+    // This sample treats an event tracking error as a fatal error. Depending
+    // on your application's needs, failing to track an event may not be
+    // considered an error.
+    next(error);
+  }
+});
+
 app.use("/", router);
 app.listen(process.env.PORT || 8080);
 module.exports = app; // for testing only
