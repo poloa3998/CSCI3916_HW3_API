@@ -13,6 +13,7 @@ var jwt = require("jsonwebtoken");
 var cors = require("cors");
 var User = require("./Users");
 const Movies = require("./moviesModel");
+const Reviews = require("./reviewsModel");
 
 var app = express();
 app.use(cors());
@@ -101,9 +102,34 @@ router.post("/signin", function (req, res) {
 router.get("/movies", authJwtController.isAuthenticated, async (req, res) => {
   try {
     const movies = await Movies.find();
+    if (req.query.reviews === "true") {
+      Movies.aggregate(
+        [
+          {
+            $match: { movie: movies.title },
+          },
+          {
+            $lookup: {
+              from: "reviews",
+              localField: "movie",
+              foreignField: "movie",
+              as: "Review",
+            },
+          },
+        ],
+        (error, result) => {
+          if (error) {
+            return res.status(500).json(error);
+          }
+          return res
+            .status(200)
+            .json({ success: true, msg: "Movie with reviews found", result });
+        }
+      );
+    }
     return res.status(200).json(movies);
   } catch (error) {
-    return es.status(500).json(error);
+    return res.status(500).json(error);
   }
 });
 
@@ -138,7 +164,38 @@ router.get(
   async (req, res) => {
     try {
       const movie = await Movies.findById(req.params.movieID);
-      return res.status(200).json({ success: true, msg: "Movie found", movie });
+      if (!movie) {
+        return res.status(500).json("Movie does not exists");
+      }
+      if (req.query.reviews === "true") {
+        Movies.aggregate(
+          [
+            {
+              $match: { title: movie.title },
+            },
+            {
+              $lookup: {
+                from: "reviews",
+                localField: "title",
+                foreignField: "movie",
+                as: "Reviews",
+              },
+            },
+          ],
+          (error, movie) => {
+            if (error) {
+              return res.status(500).json(error);
+            }
+            return res
+              .status(200)
+              .json({ success: true, msg: "Movie with reviews found", movie });
+          }
+        );
+      } else {
+        return res
+          .status(200)
+          .json({ success: true, msg: "Movie found", movie });
+      }
     } catch (error) {
       return res.status(500).json(error);
     }
@@ -177,6 +234,50 @@ router.delete(
     }
   }
 );
+
+router.get("/reviews", async (req, res) => {
+  try {
+    const reviews = await Reviews.find();
+    if (!reviews) {
+      return res.json(500).json("No Reviews");
+    }
+
+    return res.status(200).json(reviews);
+  } catch (error) {
+    return res.json(500).json(error);
+  }
+});
+router.post("/reviews", authJwtController.isAuthenticated, async (req, res) => {
+  const { movie, reviewer, quote, rating } = req.body;
+  if (!movie || !reviewer || !quote || !rating) {
+    return res.status(500).json({ success: false, msg: "Missing information" });
+  }
+  try {
+    const movieFound = await Movies.findOne({ title: movie });
+
+    if (!movieFound) {
+      return res.status(404).json("Movie does not exist");
+    }
+    Reviews.create(
+      {
+        movie,
+        reviewer,
+        quote,
+        rating,
+      },
+      (error, review) => {
+        if (error) {
+          return res.status(500).json(error);
+        }
+        return res
+          .status(200)
+          .json({ success: true, msg: "Review created", review });
+      }
+    );
+  } catch (error) {
+    res.status(500).json(error);
+  }
+});
 app.use("/", router);
 app.listen(process.env.PORT || 8080);
 module.exports = app; // for testing only
