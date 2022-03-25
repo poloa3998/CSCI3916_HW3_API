@@ -107,7 +107,7 @@ router.get("/movies", authJwtController.isAuthenticated, async (req, res) => {
   }
 });
 
-router.post("/movie", authJwtController.isAuthenticated, (req, res) => {
+router.post("/movies", authJwtController.isAuthenticated, (req, res) => {
   const { title, year, genre, actors } = req.body;
   if (!actors || actors.length < 3) {
     return res.status(500).json({ success: false, msg: actors });
