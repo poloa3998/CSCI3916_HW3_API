@@ -107,16 +107,14 @@ router.get("/movies", authJwtController.isAuthenticated, async (req, res) => {
       Movies.aggregate(
         [
           {
-            $match: { movie: movies.title },
-          },
-          {
             $lookup: {
               from: "reviews",
-              localField: "movie",
+              localField: "title",
               foreignField: "movie",
               as: "reviews",
             },
           },
+          { $sort: { avgRating: -1 } },
         ],
         (error, result) => {
           if (error) {
@@ -136,7 +134,7 @@ router.get("/movies", authJwtController.isAuthenticated, async (req, res) => {
 });
 
 router.post("/movies", authJwtController.isAuthenticated, (req, res) => {
-  const { title, year, genre, actors } = req.body;
+  const { title, year, genre, actors, imageUrl } = req.body;
   if (!actors || actors.length < 3) {
     return res
       .status(500)
@@ -148,6 +146,7 @@ router.post("/movies", authJwtController.isAuthenticated, (req, res) => {
       year,
       genre,
       actors,
+      imageUrl,
     },
     (error, movie) => {
       if (error) {
@@ -183,6 +182,7 @@ router.get(
                 as: "Reviews",
               },
             },
+            { $sort: { avgRating: -1 } },
           ],
           (error, movie) => {
             if (error) {
@@ -256,9 +256,18 @@ router.post("/reviews", authJwtController.isAuthenticated, async (req, res) => {
   }
   try {
     const movieFound = await Movies.findOne({ title: movie });
-
     if (!movieFound) {
       return res.status(404).json("Movie does not exist");
+    }
+    const pastReviews = await Reviews.find({ movie });
+    if (pastReviews.length !== 0) {
+      const ratings = pastReviews.map((review) => review.rating);
+      const avgRating = (
+        ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length
+      ).toFixed(2);
+      await movieFound.updateOne({ avgRating });
+    } else {
+      await movieFound.updateOne({ avgRating: rating });
     }
     Reviews.create(
       {
@@ -269,13 +278,22 @@ router.post("/reviews", authJwtController.isAuthenticated, async (req, res) => {
       },
       (error, review) => {
         if (error) {
-          return res.status(500).json(error);
         }
         return res
           .status(200)
           .json({ success: true, msg: "Review created", review });
       }
     );
+  } catch (error) {
+    res.status(500).json(error);
+  }
+});
+
+router.post("/search", async (req, res) => {
+  try {
+    const { searchTerm } = req.body;
+    const movies = await Movies.find({ title: searchTerm });
+    res.status(200).json(movies);
   } catch (error) {
     res.status(500).json(error);
   }

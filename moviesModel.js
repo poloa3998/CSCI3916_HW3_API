@@ -34,6 +34,13 @@ const MovieSchema = new mongoose.Schema({
       },
     },
   ],
+  imageUrl: {
+    type: Number,
+  },
+  avgRating: {
+    type: Number,
+    default: 0,
+  },
 });
 
 module.exports = mongoose.model("movies", MovieSchema);
