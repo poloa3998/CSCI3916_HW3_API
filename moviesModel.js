@@ -35,7 +35,7 @@ const MovieSchema = new mongoose.Schema({
     },
   ],
   imageUrl: {
-    type: Number,
+    type: String,
   },
   avgRating: {
     type: Number,
