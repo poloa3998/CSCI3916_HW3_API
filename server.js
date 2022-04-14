@@ -114,7 +114,7 @@ router.get("/movies", authJwtController.isAuthenticated, async (req, res) => {
               from: "reviews",
               localField: "movie",
               foreignField: "movie",
-              as: "Review",
+              as: "reviews",
             },
           },
         ],
@@ -127,8 +127,9 @@ router.get("/movies", authJwtController.isAuthenticated, async (req, res) => {
             .json({ success: true, msg: "Movie with reviews found", result });
         }
       );
+    } else {
+      return res.status(200).json(movies);
     }
-    return res.status(200).json(movies);
   } catch (error) {
     return res.status(500).json(error);
   }
