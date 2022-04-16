@@ -298,7 +298,7 @@ router.post("/search", async (req, res) => {
       movie.title.toLowerCase().includes(searchTerm.toLocaleLowerCase())
     );
 
-    res.status(200).json(movies);
+    res.status(200).json({ result: movies });
   } catch (error) {
     res.status(500).json(error);
   }
