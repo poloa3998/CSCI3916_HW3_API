@@ -292,7 +292,12 @@ router.post("/reviews", authJwtController.isAuthenticated, async (req, res) => {
 router.post("/search", async (req, res) => {
   try {
     const { searchTerm } = req.body;
-    const movies = await Movies.find({ title: searchTerm });
+    let movies = await Movies.find();
+
+    movies = movies.filter((movie) =>
+      movie.title.toLowerCase().includes(searchTerm.toLocaleLowerCase())
+    );
+
     res.status(200).json(movies);
   } catch (error) {
     res.status(500).json(error);
